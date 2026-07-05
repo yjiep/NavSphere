@@ -8,19 +8,19 @@ export async function getFileContent(path: string) {
 
   try {
     const session = await auth()
-    const token = session?.user?.accessToken
+    const token = session?.user?.accessToken || process.env.GITHUB_PAT
 
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`
+    const apiUrl = https://api.github.com/repos///contents/?ref=
     const response = await fetch(apiUrl, {
       headers: {
         Accept: 'application/vnd.github.v3.raw',
-        Authorization: token ? `token ${token}` : '',
+        Authorization: token ? 	oken  : '',
         'User-Agent': 'NavSphere',
       },
     })
 
     if (response.status === 404) {
-      console.log(`File not found: ${path}, returning default data`)
+      console.log(File not found: , returning default data)
       if (path.includes('navigation.json')) {
         return { navigationItems: [] }
       }
@@ -28,7 +28,7 @@ export async function getFileContent(path: string) {
     }
 
     if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.statusText}`)
+      throw new Error(GitHub API error: )
     }
 
     const data = await response.json()
@@ -57,15 +57,14 @@ export async function commitFile(
 
   for (let attempt = 1; attempt <= retryCount; attempt++) {
     try {
-      // 1. 获取当前文件信息（如果存在）
-      const currentFileUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`
+      const currentFileUrl = https://api.github.com/repos///contents/?ref=
       const currentFileResponse = await fetch(currentFileUrl, {
         headers: {
-          Authorization: `token ${token}`,
+          Authorization: 	oken ,
           Accept: 'application/vnd.github.v3+json',
           'User-Agent': 'NavSphere',
         },
-        cache: 'no-store', // 禁用缓存，确保获取最新的文件信息
+        cache: 'no-store',
       })
 
       let sha = undefined
@@ -74,12 +73,11 @@ export async function commitFile(
         sha = currentFile.sha
       }
 
-      // 2. 创建或更新文件
-      const updateUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`
+      const updateUrl = https://api.github.com/repos///contents/
       const response = await fetch(updateUrl, {
         method: 'PUT',
         headers: {
-          Authorization: `token ${token}`,
+          Authorization: 	oken ,
           Accept: 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
           'User-Agent': 'NavSphere',
@@ -95,11 +93,11 @@ export async function commitFile(
       if (!response.ok) {
         const error = await response.json()
         if (attempt < retryCount && error.message?.includes('sha')) {
-          console.log(`Attempt ${attempt} failed, retrying after delay...`)
-          await delay(1000 * attempt) // 指数退避
+          console.log(Attempt  failed, retrying after delay...)
+          await delay(1000 * attempt)
           continue
         }
-        throw new Error(`Failed to commit file: ${error.message}`)
+        throw new Error(Failed to commit file: )
       }
 
       return await response.json()
@@ -108,8 +106,8 @@ export async function commitFile(
         console.error('Error in commitFile:', error)
         throw error
       }
-      console.log(`Attempt ${attempt} failed, retrying...`)
+      console.log(Attempt  failed, retrying...)
       await delay(1000 * attempt)
     }
   }
-} 
+}
