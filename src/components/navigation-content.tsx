@@ -8,22 +8,24 @@ import { Sidebar } from '@/components/sidebar'
 import { SearchBar } from '@/components/search-bar'
 import { ModeToggle } from '@/components/mode-toggle'
 import { Footer } from '@/components/footer'
-import { Github, HelpCircle, Puzzle, MonitorPlay, Send } from 'lucide-react'
+import { Github, HelpCircle, Puzzle, MonitorPlay, Send, Database, Cloud } from 'lucide-react'
 import { Button } from "@/registry/new-york/ui/button"
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Menu } from 'lucide-react'
 
 interface NavigationContentProps {
-  navigationData: NavigationData
-  siteData: SiteConfig
+  liveData: { navigationData: NavigationData; siteData: SiteConfig }
+  fallbackData: { navigationData: NavigationData; siteData: SiteConfig }
 }
 
-export function NavigationContent({ navigationData, siteData }: NavigationContentProps) {
+export function NavigationContent({ liveData, fallbackData }: NavigationContentProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [useFallback, setUseFallback] = useState(false)
 
-  // 修复类型检查和搜索逻辑
+  const { navigationData, siteData } = useFallback ? fallbackData : liveData
+
   const searchResults = useMemo(() => {
     const query = searchQuery.toLowerCase().trim()
     if (!query) return []
@@ -38,7 +40,6 @@ export function NavigationContent({ navigationData, siteData }: NavigationConten
     }> = []
 
     navigationData.navigationItems.forEach(category => {
-      // 搜索主分类下的项目（只搜索启用的）
       const items = (category.items || []).filter(item => {
         if (item.enabled === false) return false
         const titleMatch = item.title.toLowerCase().includes(query)
@@ -46,7 +47,6 @@ export function NavigationContent({ navigationData, siteData }: NavigationConten
         return titleMatch || descMatch
       })
 
-      // 搜索子分类下的项目（只搜索启用的）
       const subResults: Array<{
         title: string
         items: (NavigationItem | NavigationSubItem)[]
@@ -71,7 +71,6 @@ export function NavigationContent({ navigationData, siteData }: NavigationConten
         })
       }
 
-      // 只有当主分类或子分类有匹配结果时才添加到结果中
       if (items.length > 0 || subResults.length > 0) {
         results.push({
           category,
@@ -80,22 +79,6 @@ export function NavigationContent({ navigationData, siteData }: NavigationConten
         })
       }
     })
-
-    // 调试信息
-    if (query && results.length > 0) {
-      console.log('搜索结果:', {
-        query,
-        totalResults: results.length,
-        results: results.map(r => ({
-          category: r.category.title,
-          mainItems: r.items.length,
-          subCategories: r.subCategories.map(s => ({
-            title: s.title,
-            items: s.items.length
-          }))
-        }))
-      })
-    }
 
     return results
   }, [navigationData, searchQuery])
@@ -143,6 +126,18 @@ export function NavigationContent({ navigationData, siteData }: NavigationConten
               />
             </div>
             <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setUseFallback(!useFallback)}
+                className={cn(
+                  "hover:bg-accent hover:text-accent-foreground",
+                  useFallback && "text-primary bg-accent"
+                )}
+                title={useFallback ? "\u5F53\u524D\uFF1A\u9759\u6001\u6570\u636E\uFF08\u70B9\u51FB\u5207\u6362\u5230\u5B9E\u65F6\uFF09" : "\u5F53\u524D\uFF1A\u5B9E\u65F6\u6570\u636E\uFF08\u70B9\u51FB\u5207\u6362\u5230\u9759\u6001\uFF09"}
+              >
+                {useFallback ? <Database className="h-5 w-5" /> : <Cloud className="h-5 w-5" />}
+              </Button>
               <Link
                 href="/submit"
                 aria-label="投稿网站"
@@ -231,7 +226,6 @@ export function NavigationContent({ navigationData, siteData }: NavigationConten
                     {category.title}
                   </h2>
 
-                  {/* 一级分类下直接挂载的站点 */}
                   {category.items && category.items.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {category.items.map((item) => (
@@ -240,7 +234,6 @@ export function NavigationContent({ navigationData, siteData }: NavigationConten
                     </div>
                   )}
 
-                  {/* 二级分类及其站点 */}
                   {category.subCategories && category.subCategories.length > 0 &&
                     category.subCategories.map((subCategory) => (
                       <div key={subCategory.id} id={subCategory.id} className="space-y-3">
@@ -259,7 +252,7 @@ export function NavigationContent({ navigationData, siteData }: NavigationConten
             ))}
           </div>
         </div>
-        {/* 页脚 */}
+
         <Footer siteInfo={siteData} />
       </main>
     </div>
