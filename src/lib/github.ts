@@ -8,19 +8,20 @@ export async function getFileContent(path: string) {
 
   try {
     const session = await auth()
-    const token = session?.user?.accessToken || process.env.GITHUB_PAT
+    const serverPat = process.env.GITHUB_PAT
+    const token = session?.user?.accessToken || serverPat
 
-    const apiUrl = https://api.github.com/repos///contents/?ref=
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`
     const response = await fetch(apiUrl, {
       headers: {
         Accept: 'application/vnd.github.v3.raw',
-        Authorization: token ? 	oken  : '',
+        Authorization: token ? `token ${token}` : '',
         'User-Agent': 'NavSphere',
       },
     })
 
     if (response.status === 404) {
-      console.log(File not found: , returning default data)
+      console.log(`File not found: ${path}, returning default data`)
       if (path.includes('navigation.json')) {
         return { navigationItems: [] }
       }
@@ -28,7 +29,7 @@ export async function getFileContent(path: string) {
     }
 
     if (!response.ok) {
-      throw new Error(GitHub API error: )
+      throw new Error(`GitHub API error: ${response.statusText}`)
     }
 
     const data = await response.json()
@@ -57,10 +58,10 @@ export async function commitFile(
 
   for (let attempt = 1; attempt <= retryCount; attempt++) {
     try {
-      const currentFileUrl = https://api.github.com/repos///contents/?ref=
+      const currentFileUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`
       const currentFileResponse = await fetch(currentFileUrl, {
         headers: {
-          Authorization: 	oken ,
+          Authorization: `token ${token}`,
           Accept: 'application/vnd.github.v3+json',
           'User-Agent': 'NavSphere',
         },
@@ -73,11 +74,11 @@ export async function commitFile(
         sha = currentFile.sha
       }
 
-      const updateUrl = https://api.github.com/repos///contents/
+      const updateUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`
       const response = await fetch(updateUrl, {
         method: 'PUT',
         headers: {
-          Authorization: 	oken ,
+          Authorization: `token ${token}`,
           Accept: 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
           'User-Agent': 'NavSphere',
@@ -93,11 +94,11 @@ export async function commitFile(
       if (!response.ok) {
         const error = await response.json()
         if (attempt < retryCount && error.message?.includes('sha')) {
-          console.log(Attempt  failed, retrying after delay...)
+          console.log(`Attempt ${attempt} failed, retrying after delay...`)
           await delay(1000 * attempt)
           continue
         }
-        throw new Error(Failed to commit file: )
+        throw new Error(`Failed to commit file: ${error.message}`)
       }
 
       return await response.json()
@@ -106,7 +107,7 @@ export async function commitFile(
         console.error('Error in commitFile:', error)
         throw error
       }
-      console.log(Attempt  failed, retrying...)
+      console.log(`Attempt ${attempt} failed, retrying...`)
       await delay(1000 * attempt)
     }
   }
