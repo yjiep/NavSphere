@@ -10,8 +10,8 @@ export const dynamic = 'force-dynamic'
 async function getData() {
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
   const [navRes, siteRes] = await Promise.all([
-    fetch( + '/api/home/navigation', { cache: 'no-store' }),
-    fetch( + '/api/home/site', { cache: 'no-store' })
+    fetch(baseUrl + '/api/home/navigation', { cache: 'no-store' }),
+    fetch(baseUrl + '/api/home/site', { cache: 'no-store' })
   ])
   const navDataRaw = await navRes.json()
   const siteDataRaw = await siteRes.json()
